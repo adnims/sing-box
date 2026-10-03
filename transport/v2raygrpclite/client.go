@@ -83,13 +83,22 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 	return client
 }
 
+func (c *Client) requestHeader() http.Header {
+	if c.options.UserAgent != "" {
+		header := defaultClientHeader.Clone()
+		header.Set("User-Agent", c.options.UserAgent)
+		return header
+	}
+	return defaultClientHeader
+}
+
 func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 	pipeInReader, pipeInWriter := io.Pipe()
 	request := &http.Request{
 		Method: http.MethodPost,
 		Body:   pipeInReader,
 		URL:    c.url,
-		Header: defaultClientHeader,
+		Header: c.requestHeader(),
 		Host:   c.host,
 	}
 	request = request.WithContext(ctx)
