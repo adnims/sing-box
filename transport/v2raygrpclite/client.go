@@ -23,7 +23,7 @@ var _ adapter.V2RayClientTransport = (*Client)(nil)
 
 var defaultClientHeader = http.Header{
 	"Content-Type": []string{"application/grpc"},
-	"User-Agent":   []string{"grpc-go/1.48.0"},
+	"User-Agent":   []string{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"},
 	"TE":           []string{"trailers"},
 }
 
@@ -77,13 +77,22 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 	return client
 }
 
+func (c *Client) requestHeader() http.Header {
+	if c.options.UserAgent != "" {
+		header := defaultClientHeader.Clone()
+		header.Set("User-Agent", c.options.UserAgent)
+		return header
+	}
+	return defaultClientHeader
+}
+
 func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 	pipeInReader, pipeInWriter := io.Pipe()
 	request := &http.Request{
 		Method: http.MethodPost,
 		Body:   pipeInReader,
 		URL:    c.url,
-		Header: defaultClientHeader,
+		Header: c.requestHeader(),
 		Host:   c.host,
 	}
 	request = request.WithContext(ctx)
